@@ -1,0 +1,109 @@
+service: fidel-api
+frameworkVersion: "2"
+
+plugins:
+  - serverless-deployment-bucket
+  - serverless-dynamodb-local
+
+provider:
+  name: aws
+  region: us-east-1
+  runtime: nodejs14.x
+  stage: ${env:NODE_ENV}
+  lambdaHashingVersion: 20201221
+  environment:
+    NODE_ENV: ${env:NODE_ENV}
+  deploymentBucket:
+    name: fidel-bucket
+    serverSideEncryption: AES256
+  httpApi:
+    cors: true
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: "arn:aws:dynamodb:${aws:region}:*:table/*"
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  offerTable: offer-table
+  locationTable: location-table
+  dynamodb:
+    stages:
+      - dev
+      - stage
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+    # migration:
+    #   dir: [data/offers.json, data/locations.json]
+    seed:
+      domain:
+        sources:
+          - table: ${self:custom.offerTable}
+            sources: [./data/offers.json]
+          - table: ${self:custom.locationTable}
+            sources: [./data/locations.json]
+      test:
+        sources:
+          - table: ${self:custom.offerTable}
+            sources: [./data/offers.json]
+          - table: ${self:custom.locationTable}
+            sources: [./data/locations.json]
+
+resources:
+  - Resources:
+      OfferTable:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+          AttributeDefinitions:
+            - AttributeName: id
+              AttributeType: S
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+          BillingMode: PAY_PER_REQUEST
+          TableName: ${self:custom.offerTable}
+      LocationTable:
+        Type: "AWS::DynamoDB::Table"
+        Properties:
+          AttributeDefinitions:
+            - AttributeName: id
+              AttributeType: S
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+          BillingMode: PAY_PER_REQUEST
+          TableName: ${self:custom.locationTable}
+functions:
+  linkOfferToLocation:
+    handler: services/api.linkOfferToLocation
+    events:
+      - httpApi:
+          path: /linkOfferToLocation
+          method: post
+  listOffers:
+    handler: services/api.listOffers
+    events:
+      - httpApi:
+          path: /listOffers
+          method: get
+
+  listLocations:
+    handler: services/api.listLocations
+    events:
+      - httpApi:
+          path: /listLocations
+          method: get

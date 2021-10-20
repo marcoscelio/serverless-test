@@ -1,0 +1,20 @@
+{
+  "name": "fidel",
+  "version": "1.0.0",
+  "description": "Fidel test",
+  "main": "index.js",
+  "scripts": {
+    "loadLocalDB": "serverless dynamodb seed --seed=domain,test",
+    "listOffers": "serverless invoke local --function listOffers",
+    "listLocations": "serverless invoke local --function listLocations",
+    "linkOfferToLocation": "serverless invoke local --function linkOfferToLocation --data ",
+    "deploy": "serverless deploy"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "serverless-deployment-bucket": "^1.5.1",
+    "serverless-dynamodb-local": "^0.2.40",
+    "uuid": "^8.3.2"
+  }
+}

@@ -1,4 +1,4 @@
-# Deploy app
+# Deploy application
 
 sls deploy --aws-profile fidel
 
